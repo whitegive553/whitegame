@@ -1,11 +1,16 @@
 <template>
   <div>
     <h2>{{ roomName }} - 游戏房间</h2>
-    <h3>当前回合：{{ currentTurn }}</h3>
+    <h3 v-if="winner">游戏结束，赢家：{{ winner }}</h3>
+    <h3 v-else>当前回合：{{ currentTurn }}</h3>
     <h4>当前出的牌：</h4>
     <div v-if="currentCard" class="current-card">
       {{ currentCard.value }}{{ currentCard.suit }}
     </div>
+
+    <!-- 添加 开始游戏 按钮，仅房主可见 -->
+    <button @click="startGame">开始游戏</button>
+
     <ul class="hand">
       <li v-for="(card, index) in hand" :key="index"
           :class="{ disabled: currentTurn !== username }"
@@ -20,43 +25,51 @@
 export default {
   data() {
     return {
-      roomName: this.$route.params.roomName,   // 获取路由参数中的房间名称
-      username: localStorage.getItem('username'),   // 当前玩家用户名
-      hand: [],              // 当前玩家手牌
-      currentCard: null,     // 当前出的牌
-      currentTurn: ''        // 当前回合玩家
+      roomName: this.$route.params.roomName,
+      username: localStorage.getItem('username'),
+      hand: [],
+      currentCard: null,
+      currentTurn: '',
+      winner: '',
+      isRoomOwner: false  // 新增：判断是否为房主
     }
   },
   mounted() {
     this.$socket.emit('joinRoom', this.roomName, this.username)
 
-    // 加载房间数据
     this.$socket.on('roomData', (room) => {
       this.updateGameState(room)
     })
 
-    // 游戏开始
     this.$socket.on('gameStarted', (room) => {
       this.updateGameState(room)
     })
 
-    // 更新游戏状态
     this.$socket.on('updateGame', (room) => {
       this.updateGameState(room)
     })
 
-    // 错误信息
+    this.$socket.on('gameOver', (winner) => {
+      this.winner = winner
+      alert(`游戏结束，赢家：${winner}`)
+    })
+
     this.$socket.on('errorMessage', (message) => {
       alert(message)
     })
   },
   methods: {
-    // 更新游戏状态
     updateGameState(room) {
       const player = room.players.find(p => p.username === this.username)
       this.hand = player ? player.hand : []
       this.currentCard = room.currentCard
       this.currentTurn = room.currentTurn
+      this.isRoomOwner = room.players[0].username === this.username  // 房主为第一个加入房间的玩家
+    },
+
+    // 开始游戏
+    startGame() {
+      this.$socket.emit('startGame', this.roomName)
     },
 
     // 出牌操作
@@ -74,28 +87,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.hand {
-  display: flex;
-  gap: 10px;
-}
-
-.hand li {
-  list-style: none;
-  padding: 10px;
-  background: lightblue;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.hand li.disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.current-card {
-  font-size: 24px;
-  font-weight: bold;
-}
-</style>

@@ -1,7 +1,8 @@
 const Room = require('../models/Room')
 
+// 扑克牌数据
 const suits = ['♠', '♥', '♣', '♦']
-const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+const values = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2']
 
 // 洗牌函数
 const shuffleDeck = () => {
@@ -11,7 +12,6 @@ const shuffleDeck = () => {
             deck.push({ suit, value })
         })
     })
-    // 洗牌算法：Fisher-Yates 洗牌算法
     for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
             [deck[i], deck[j]] = [deck[j], deck[i]]
@@ -31,6 +31,21 @@ const dealCards = (deck, numPlayers) => {
     return hands
 }
 
+// 牌型判断：判断出牌是否合法
+const isValidPlay = (currentCard, newCard) => {
+    if (!currentCard) return true  // 如果没有当前牌，任何牌都可以出
+    const currentValueIndex = values.indexOf(currentCard.value)
+    const newValueIndex = values.indexOf(newCard.value)
+
+    // 简单规则：必须比当前牌大
+    return newValueIndex > currentValueIndex
+}
+
+// 回合结束判定：判断是否游戏结束
+const isGameOver = (room) => {
+    return room.players.some(player => player.hand.length === 0)
+}
+
 // 出牌和回合制管理
 const playCard = async (roomName, username, card) => {
     const room = await Room.findOne({ roomName })
@@ -38,6 +53,11 @@ const playCard = async (roomName, username, card) => {
 
     // 判断是否为当前玩家的回合
     if (room.currentTurn !== username) throw new Error('不是你的回合')
+
+    // 判断出牌是否合法
+    if (!isValidPlay(room.currentCard, card)) {
+        throw new Error('出牌不合法，必须大于当前牌')
+    }
 
     // 将牌从玩家手牌中移除
     const playerIndex = room.players.findIndex(player => player.username === username)
@@ -50,9 +70,15 @@ const playCard = async (roomName, username, card) => {
     // 更新当前出的牌
     room.currentCard = card
 
-    // 更新下一回合的玩家
-    const nextIndex = (playerIndex + 1) % room.players.length
-    room.currentTurn = room.players[nextIndex].username
+    // 检查回合结束和游戏结束
+    if (isGameOver(room)) {
+        room.winner = username
+        room.currentTurn = null
+    } else {
+        // 更新下一回合的玩家
+        const nextIndex = (playerIndex + 1) % room.players.length
+        room.currentTurn = room.players[nextIndex].username
+    }
 
     await room.save()
     return room

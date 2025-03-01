@@ -65,13 +65,14 @@ io.on('connection', (socket) => {
         io.to(roomName).emit('roomData', room)
     })
 
-    // 开始游戏
+// 开始游戏
     socket.on('startGame', async (roomName) => {
         const Room = require('./models/Room')
         const room = await Room.findOne({ roomName })
 
         if (room) {
             // 洗牌并发牌
+            console.log(`开始游戏，房间：${roomName}`)
             const deck = shuffleDeck()
             const hands = dealCards(deck, room.players.length)
 
@@ -86,11 +87,17 @@ io.on('connection', (socket) => {
         }
     })
 
-    // 玩家出牌
+
+// 玩家出牌
     socket.on('playCard', async ({ roomName, username, card }) => {
         try {
             const room = await playCard(roomName, username, card)
             io.to(roomName).emit('updateGame', room)
+
+            // 游戏结束判定
+            if (room.winner) {
+                io.to(roomName).emit('gameOver', room.winner)
+            }
         } catch (error) {
             socket.emit('errorMessage', error.message)
         }
