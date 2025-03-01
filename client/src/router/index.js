@@ -2,13 +2,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import RegisterBox from '../views/RegisterBox.vue'
 import LoginBox from '../views/LoginBox.vue'
 import RoomList from '../views/RoomList.vue'
-import ChatRoom from '../views/ChatRoom.vue'
+import GameRoom from '../views/GameRoom.vue'
 
 const routes = [
     { path: '/register', component: RegisterBox },
     { path: '/login', component: LoginBox },
     { path: '/rooms', component: RoomList },
-    { path: '/chat/:roomName', component: ChatRoom, name: 'ChatRoom' },
+    { path: '/game/:roomName', component: GameRoom, name: 'GameRoom' },
     { path: '/', redirect: '/register' }
 ]
 

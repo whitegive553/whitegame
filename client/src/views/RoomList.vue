@@ -51,11 +51,11 @@ export default {
     async joinRoom(roomName) {
       const username = localStorage.getItem('username') || prompt("请输入用户名")
       localStorage.setItem('username', username)
-      this.$socket.emit('joinRoom', roomName)
+      this.$socket.emit('joinRoom', roomName, username)
 
       try {
-        await axios.post('http://localhost:3000/api/room/join', {roomName, username})
-        this.$router.push({name: 'ChatRoom', params: {roomName}})
+        await axios.post('http://localhost:3000/api/room/join', { roomName, username })
+        this.$router.push({ name: 'GameRoom', params: { roomName } })
       } catch (err) {
         console.error('加入房间失败', err)
       }
