@@ -27,7 +27,7 @@ export default {
     // 获取房间列表
     async getRooms() {
       try {
-        const res = await axios.get('http://localhost:3000/api/room/list')
+        const res = await axios.get('/room/list')
         this.rooms = res.data
       } catch (err) {
         console.error('获取房间列表失败', err)
@@ -39,7 +39,7 @@ export default {
       const roomName = prompt("请输入房间名称")
       if (roomName) {
         try {
-          await axios.post('http://localhost:3000/api/room/create', {roomName})
+          await axios.post('/room/create', {roomName})
           this.getRooms()  // 刷新房间列表
         } catch (err) {
           console.error('创建房间失败', err)
@@ -54,7 +54,7 @@ export default {
       this.$socket.emit('joinRoom', roomName, username)
 
       try {
-        await axios.post('http://localhost:3000/api/room/join', { roomName, username })
+        await axios.post('/room/join', { roomName, username })
         this.$router.push({ name: 'GameRoom', params: { roomName } })
       } catch (err) {
         console.error('加入房间失败', err)
